@@ -1,4 +1,4 @@
-import { useCallback,useState } from 'react'
+import { useEffect, useState } from 'react'
 
 import { AppShell } from './components/layout/AppShell'
 import { ConfirmDialog } from './components/ui/ConfirmDialog'
@@ -9,22 +9,35 @@ function App() {
   const [showNewBoardInput, setShowNewBoardInput] = useState(false)
   const [newBoardTitle, setNewBoardTitle] = useState('')
 
-  const handleCreateBoard = useCallback(() => {
+  const handleCreateBoard = () => {
     setShowNewBoardInput(true)
-  }, [])
+  }
 
-  const handleConfirmCreate = useCallback(() => {
+  const handleConfirmCreate = () => {
     const trimmed = newBoardTitle.trim()
     if (trimmed) {
       createBoard(trimmed)
     }
     setNewBoardTitle('')
     setShowNewBoardInput(false)
-  }, [newBoardTitle, createBoard])
+  }
 
-  const handleCancelCreate = useCallback(() => {
+  const handleCancelCreate = () => {
     setNewBoardTitle('')
     setShowNewBoardInput(false)
+  }
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'n' && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        const tag = (e.target as HTMLElement).tagName
+        if (tag === 'INPUT' || tag === 'TEXTAREA' || (e.target as HTMLElement).isContentEditable) return
+        e.preventDefault()
+        setShowNewBoardInput(true)
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
   }, [])
 
   return (
@@ -39,7 +52,6 @@ function App() {
         onCancel={handleCancelCreate}
       />
 
-      {/* Inline new board input overlay */}
       {showNewBoardInput && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
           <div

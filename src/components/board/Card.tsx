@@ -1,10 +1,14 @@
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import type { ReactNode } from 'react'
-import { useEffect, useRef, useState } from 'react'
+import { useState } from 'react'
 
 import { useKanbanStore } from '../../store/kanbanStore'
 import type { Id } from '../../types/kanban'
+import { CardModal } from '../card/CardModal'
+import { DueDateBadge } from '../card/DueDateBadge'
+import { LabelBadge } from '../card/LabelBadge'
+import { PriorityBadge } from '../card/PriorityBadge'
 import { ConfirmDialog } from '../ui/ConfirmDialog'
 
 interface CardProps {
@@ -13,13 +17,10 @@ interface CardProps {
 
 export function Card({ cardId }: CardProps): ReactNode {
   const card = useKanbanStore((state) => state.cards[cardId])
-  const updateCard = useKanbanStore((state) => state.updateCard)
   const deleteCard = useKanbanStore((state) => state.deleteCard)
 
-  const [isEditing, setIsEditing] = useState(false)
-  const [editTitle, setEditTitle] = useState('')
+  const [isModalOpen, setIsModalOpen] = useState(false)
   const [showConfirm, setShowConfirm] = useState(false)
-  const inputRef = useRef<HTMLInputElement>(null)
 
   const {
     attributes,
@@ -35,27 +36,7 @@ export function Card({ cardId }: CardProps): ReactNode {
     transition,
   }
 
-  useEffect(() => {
-    if (isEditing && inputRef.current) {
-      inputRef.current.focus()
-      inputRef.current.select()
-    }
-  }, [isEditing])
-
   if (!card) return null
-
-  const handleSave = () => {
-    const trimmed = editTitle.trim()
-    if (trimmed && trimmed !== card.title) {
-      updateCard(card.id, { title: trimmed })
-    }
-    setIsEditing(false)
-  }
-
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') handleSave()
-    if (e.key === 'Escape') setIsEditing(false)
-  }
 
   const handleDelete = () => {
     deleteCard(card.id)
@@ -75,28 +56,13 @@ export function Card({ cardId }: CardProps): ReactNode {
         }
       >
         <div className="flex items-start justify-between gap-2">
-          {isEditing ? (
-            <input
-              ref={inputRef}
-              type="text"
-              value={editTitle}
-              onChange={(e) => setEditTitle(e.target.value)}
-              onBlur={handleSave}
-              onKeyDown={handleKeyDown}
-              className="w-full rounded bg-transparent text-sm font-medium text-[var(--color-text-primary)] outline-none"
-            />
-          ) : (
-            <button
-              type="button"
-              onClick={() => {
-                setEditTitle(card.title)
-                setIsEditing(true)
-              }}
-              className="text-left text-sm font-medium text-[var(--color-text-primary)] hover:text-[var(--color-accent)]"
-            >
-              {card.title}
-            </button>
-          )}
+          <button
+            type="button"
+            onClick={() => setIsModalOpen(true)}
+            className="text-left text-sm font-medium text-[var(--color-text-primary)] hover:text-[var(--color-accent)]"
+          >
+            {card.title}
+          </button>
 
           <button
             type="button"
@@ -122,24 +88,25 @@ export function Card({ cardId }: CardProps): ReactNode {
           </button>
         </div>
 
-        {card.priority && (
-          <div className="mt-2 flex items-center gap-1.5">
-            <span
-              className={
-                'inline-block h-2 w-2 rounded-full' +
-                (card.priority === 'high'
-                  ? ' bg-red-500'
-                  : card.priority === 'medium'
-                    ? ' bg-amber-500'
-                    : ' bg-emerald-500')
-              }
-            />
-            <span className="text-[11px] uppercase tracking-wide text-[var(--color-text-muted)]">
-              {card.priority}
-            </span>
+        {card.description && (
+          <p className="mt-1.5 line-clamp-2 text-[13px] text-[var(--color-text-secondary)]">
+            {card.description}
+          </p>
+        )}
+
+        {/* Meta row */}
+        {(card.priority || card.labels.length > 0 || card.dueDate) && (
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+            <PriorityBadge priority={card.priority} />
+            {card.labels.map((labelId) => (
+              <LabelBadge key={labelId} labelId={labelId} />
+            ))}
+            <DueDateBadge dueDate={card.dueDate} />
           </div>
         )}
       </div>
+
+      <CardModal card={card} isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
 
       <ConfirmDialog
         isOpen={showConfirm}

@@ -1,8 +1,9 @@
 import type { ReactNode } from 'react'
-import { useEffect,useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 import { useKanbanStore } from '../../store/kanbanStore'
 import { ConfirmDialog } from '../ui/ConfirmDialog'
+import { ExportImportButtons } from '../ui/ExportImportButtons'
 
 export function Header(): ReactNode {
   const activeBoardId = useKanbanStore((state) => state.activeBoardId)
@@ -86,6 +87,7 @@ export function Header(): ReactNode {
         </div>
 
         <div className="flex items-center gap-2">
+          <ExportImportButtons />
           <button
             type="button"
             onClick={() => setShowConfirm(true)}

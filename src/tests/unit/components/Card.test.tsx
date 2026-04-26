@@ -33,38 +33,55 @@ describe('Card', () => {
     expect(screen.getByText('My Task')).toBeInTheDocument()
   })
 
+  it('renders description preview', () => {
+    const columnId = createTestBoardAndGetFirstColumnId()
+    const cardId = useKanbanStore.getState().createCard(columnId, {
+      title: 'Task',
+      description: 'A detailed description of the task',
+    })
+
+    render(<Card cardId={cardId} />)
+    expect(screen.getByText('A detailed description of the task')).toBeInTheDocument()
+  })
+
   it('shows priority badge when set', () => {
     const columnId = createTestBoardAndGetFirstColumnId()
-    useKanbanStore.getState().createCard(columnId, { title: 'High Priority', priority: 'high' })
+    useKanbanStore.getState().createCard(columnId, { title: 'High', priority: 'high' })
     const cardId = Object.keys(useKanbanStore.getState().cards)[0]
 
     render(<Card cardId={cardId} />)
     expect(screen.getByText('high')).toBeInTheDocument()
   })
 
-  it('switches to edit mode when clicking title', async () => {
-    const columnId = createTestBoardAndGetFirstColumnId()
-    const cardId = useKanbanStore.getState().createCard(columnId, { title: 'Editable' })
+  it('shows label badge when card has labels', () => {
+    const boardId = useKanbanStore.getState().createBoard('Test')
+    const columnId = useKanbanStore.getState().boards[boardId].columnIds[0]
+    const labelId = useKanbanStore.getState().createLabel(boardId, 'Bug', '#ef4444')
+    const cardId = useKanbanStore.getState().createCard(columnId, { title: 'Labeled', labels: [labelId] })
 
     render(<Card cardId={cardId} />)
-    await userEvent.click(screen.getByText('Editable'))
-
-    expect(screen.getByRole('textbox')).toBeInTheDocument()
+    expect(screen.getByText('Bug')).toBeInTheDocument()
   })
 
-  it('updates card title on blur', async () => {
+  it('shows due date badge when card has due date', () => {
     const columnId = createTestBoardAndGetFirstColumnId()
-    const cardId = useKanbanStore.getState().createCard(columnId, { title: 'Old' })
+    const cardId = useKanbanStore.getState().createCard(columnId, {
+      title: 'Dated',
+      dueDate: '2025-12-31T00:00:00.000Z',
+    })
 
     render(<Card cardId={cardId} />)
-    await userEvent.click(screen.getByText('Old'))
+    expect(screen.getByText(/Dec/)).toBeInTheDocument()
+  })
 
-    const input = screen.getByRole('textbox')
-    await userEvent.clear(input)
-    await userEvent.type(input, 'New')
-    await userEvent.tab()
+  it('opens CardModal when clicking title', async () => {
+    const columnId = createTestBoardAndGetFirstColumnId()
+    const cardId = useKanbanStore.getState().createCard(columnId, { title: 'Clickable' })
 
-    expect(useKanbanStore.getState().cards[cardId].title).toBe('New')
+    render(<Card cardId={cardId} />)
+    await userEvent.click(screen.getByText('Clickable'))
+
+    expect(screen.getByRole('dialog')).toBeInTheDocument()
   })
 
   it('shows confirm dialog when clicking delete', async () => {

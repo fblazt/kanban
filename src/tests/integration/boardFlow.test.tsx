@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { beforeEach,describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 
 import App from '../../App'
 import { useKanbanStore } from '../../store/kanbanStore'
@@ -28,9 +28,7 @@ describe('Board lifecycle integration', () => {
     await userEvent.type(input, 'My Project')
     await userEvent.click(screen.getByRole('button', { name: 'Create' }))
 
-    // Board title should appear in header
     expect(screen.getAllByText('My Project')[0]).toBeInTheDocument()
-    // Default columns should be visible
     expect(screen.getByText('To Do')).toBeInTheDocument()
     expect(screen.getByText('In Progress')).toBeInTheDocument()
     expect(screen.getByText('Done')).toBeInTheDocument()
@@ -63,7 +61,6 @@ describe('Board lifecycle integration', () => {
     expect(dialog).toBeInTheDocument()
     expect(screen.getByText(/contains 1 card/)).toBeInTheDocument()
 
-    // Click the red delete button inside the dialog
     const dialogButtons = dialog.querySelectorAll('button')
     const deleteButton = dialogButtons[dialogButtons.length - 1]
     await userEvent.click(deleteButton)
@@ -82,7 +79,6 @@ describe('Board lifecycle integration', () => {
     await userEvent.type(screen.getByPlaceholderText('Enter column title...'), 'Review')
     await userEvent.click(screen.getByRole('button', { name: 'Add Column' }))
 
-    // Verify in store
     const state = useKanbanStore.getState()
     expect(Object.values(state.boards)[0].title).toBe('Persisted')
     expect(Object.values(state.columns)).toHaveLength(4)
@@ -103,7 +99,7 @@ describe('Board lifecycle integration', () => {
     expect(Object.values(state.cards)).toHaveLength(1)
   })
 
-  it('edits card title inline', async () => {
+  it('edits card title via modal', async () => {
     const boardId = useKanbanStore.getState().createBoard('Card Board')
     const columnId = useKanbanStore.getState().boards[boardId].columnIds[0]
     useKanbanStore.getState().createCard(columnId, { title: 'Old Task' })
@@ -111,10 +107,12 @@ describe('Board lifecycle integration', () => {
     render(<App />)
     await userEvent.click(screen.getByText('Old Task'))
 
-    const input = screen.getByRole('textbox')
-    await userEvent.clear(input)
-    await userEvent.type(input, 'Updated Task')
-    await userEvent.tab()
+    expect(screen.getByRole('dialog')).toBeInTheDocument()
+
+    const titleInput = screen.getByDisplayValue('Old Task')
+    await userEvent.clear(titleInput)
+    await userEvent.type(titleInput, 'Updated Task')
+    await userEvent.click(screen.getByRole('button', { name: 'Save' }))
 
     expect(screen.getByText('Updated Task')).toBeInTheDocument()
   })

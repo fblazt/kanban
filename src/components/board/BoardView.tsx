@@ -1,4 +1,17 @@
+import type {
+  DragEndEvent,
+  DragStartEvent} from '@dnd-kit/core';
+import {
+  DndContext,
+  DragOverlay,
+  MouseSensor,
+  PointerSensor,
+  TouchSensor,
+  useSensor,
+  useSensors,
+} from '@dnd-kit/core'
 import type { ReactNode } from 'react'
+import { useState } from 'react'
 
 import { useKanbanStore } from '../../store/kanbanStore'
 import { AddColumnButton } from './AddColumnButton'
@@ -9,8 +22,19 @@ export function BoardView(): ReactNode {
   const boards = useKanbanStore((state) => state.boards)
   const columns = useKanbanStore((state) => state.columns)
   const createColumn = useKanbanStore((state) => state.createColumn)
+  const moveCard = useKanbanStore((state) => state.moveCard)
+
+  const [activeCardId, setActiveCardId] = useState<string | null>(null)
 
   const board = activeBoardId ? boards[activeBoardId] : null
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(MouseSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(TouchSensor, {
+      activationConstraint: { delay: 150, tolerance: 5 },
+    })
+  )
 
   if (!board) {
     return (
@@ -46,12 +70,72 @@ export function BoardView(): ReactNode {
     createColumn(board.id, title)
   }
 
+  const handleDragStart = (event: DragStartEvent) => {
+    const { active } = event
+    if (active.data.current?.type === 'Card') {
+      setActiveCardId(active.id as string)
+    }
+  }
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event
+    setActiveCardId(null)
+
+    if (!over) return
+
+    const activeId = active.id as string
+    const overId = over.id as string
+
+    if (activeId === overId) return
+
+    const activeData = active.data.current
+    if (activeData?.type !== 'Card') return
+
+    const overData = over.data.current
+
+    let targetColumnId: string
+    let targetIndex: number
+
+    if (overData?.type === 'Card') {
+      // Dropped over another card
+      const overCard = useKanbanStore.getState().cards[overId]
+      if (!overCard) return
+      targetColumnId = overCard.columnId
+      const column = useKanbanStore.getState().columns[targetColumnId]
+      targetIndex = column.cardIds.indexOf(overId)
+    } else if (overData?.type === 'Column') {
+      // Dropped over a column (empty or at end)
+      targetColumnId = overId
+      const column = useKanbanStore.getState().columns[targetColumnId]
+      targetIndex = column.cardIds.length
+    } else {
+      return
+    }
+
+    moveCard(activeId, targetColumnId, targetIndex)
+  }
+
   return (
-    <div className="flex flex-1 gap-4 overflow-x-auto p-5">
-      {boardColumns.map((column) => (
-        <Column key={column.id} columnId={column.id} />
-      ))}
-      <AddColumnButton onAdd={handleAddColumn} />
-    </div>
+    <DndContext
+      sensors={sensors}
+      onDragStart={handleDragStart}
+      onDragEnd={handleDragEnd}
+    >
+      <div className="flex flex-1 gap-4 overflow-x-auto p-5">
+        {boardColumns.map((column) => (
+          <Column key={column.id} columnId={column.id} />
+        ))}
+        <AddColumnButton onAdd={handleAddColumn} />
+      </div>
+      <DragOverlay dropAnimation={null}>
+        {activeCardId ? (
+          <div className="rounded-md border border-[var(--color-border-medium)] bg-[var(--color-bg-elevated)] p-3 shadow-lg opacity-90">
+            <p className="text-sm font-medium text-[var(--color-text-primary)]">
+              {useKanbanStore.getState().cards[activeCardId]?.title}
+            </p>
+          </div>
+        ) : null}
+      </DragOverlay>
+    </DndContext>
   )
 }

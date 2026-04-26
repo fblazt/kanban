@@ -87,4 +87,54 @@ describe('Board lifecycle integration', () => {
     expect(Object.values(state.boards)[0].title).toBe('Persisted')
     expect(Object.values(state.columns)).toHaveLength(4)
   })
+
+  it('creates card via inline input in column', async () => {
+    useKanbanStore.getState().createBoard('Card Board')
+
+    render(<App />)
+    await userEvent.click(screen.getAllByRole('button', { name: /Add a card/ })[0])
+
+    const input = screen.getByPlaceholderText('Enter card title...')
+    await userEvent.type(input, 'New Task')
+    await userEvent.click(screen.getByRole('button', { name: 'Add Card' }))
+
+    expect(screen.getByText('New Task')).toBeInTheDocument()
+    const state = useKanbanStore.getState()
+    expect(Object.values(state.cards)).toHaveLength(1)
+  })
+
+  it('edits card title inline', async () => {
+    const boardId = useKanbanStore.getState().createBoard('Card Board')
+    const columnId = useKanbanStore.getState().boards[boardId].columnIds[0]
+    useKanbanStore.getState().createCard(columnId, { title: 'Old Task' })
+
+    render(<App />)
+    await userEvent.click(screen.getByText('Old Task'))
+
+    const input = screen.getByRole('textbox')
+    await userEvent.clear(input)
+    await userEvent.type(input, 'Updated Task')
+    await userEvent.tab()
+
+    expect(screen.getByText('Updated Task')).toBeInTheDocument()
+  })
+
+  it('deletes card with confirm dialog', async () => {
+    const boardId = useKanbanStore.getState().createBoard('Card Board')
+    const columnId = useKanbanStore.getState().boards[boardId].columnIds[0]
+    useKanbanStore.getState().createCard(columnId, { title: 'Gone Task' })
+
+    render(<App />)
+    await userEvent.click(screen.getByLabelText('Delete card'))
+
+    const dialog = screen.getByRole('alertdialog')
+    expect(dialog).toBeInTheDocument()
+
+    const buttons = dialog.querySelectorAll('button')
+    const deleteButton = buttons[buttons.length - 1]
+    await userEvent.click(deleteButton)
+
+    const state = useKanbanStore.getState()
+    expect(Object.values(state.cards)).toHaveLength(0)
+  })
 })

@@ -4,17 +4,27 @@ import { useKanbanStore } from '../../store/kanbanStore'
 
 interface SidebarProps {
   onCreateBoard: () => void
+  onBoardSelect?: () => void
 }
 
-export function Sidebar({ onCreateBoard }: SidebarProps): ReactNode {
+export function Sidebar({ onCreateBoard, onBoardSelect }: SidebarProps): ReactNode {
   const boards = useKanbanStore((state) => state.boards)
   const activeBoardId = useKanbanStore((state) => state.activeBoardId)
   const setActiveBoard = useKanbanStore((state) => state.setActiveBoard)
 
   const boardList = Object.values(boards)
 
+  const handleSelectBoard = (boardId: string) => {
+    setActiveBoard(boardId)
+    onBoardSelect?.()
+  }
+
   return (
-    <aside className="flex h-full w-[260px] flex-col border-r border-[var(--color-border-medium)] bg-[var(--color-bg-base)]">
+    <aside
+      className="flex h-full w-[260px] flex-col border-r border-[var(--color-border-medium)] bg-[var(--color-bg-base)]"
+      role="navigation"
+      aria-label="Board list"
+    >
       <div className="flex items-center px-5 py-4">
         <h2 className="font-heading text-lg font-semibold tracking-tight text-[var(--color-text-primary)]">
           Kanban
@@ -25,12 +35,13 @@ export function Sidebar({ onCreateBoard }: SidebarProps): ReactNode {
         <div className="mb-2 px-2 text-xs font-medium uppercase tracking-wider text-[var(--color-text-muted)]">
           Boards
         </div>
-        <nav className="flex flex-col gap-1">
+        <nav className="flex flex-col gap-1" aria-label="Boards">
           {boardList.map((board) => (
             <button
               key={board.id}
               type="button"
-              onClick={() => setActiveBoard(board.id)}
+              onClick={() => handleSelectBoard(board.id)}
+              aria-current={activeBoardId === board.id ? 'page' : undefined}
               className={`rounded-md px-3 py-2 text-left text-sm transition-colors ${
                 activeBoardId === board.id
                   ? 'border-l-2 border-[var(--color-accent)] bg-[var(--color-bg-surface)] text-[var(--color-text-primary)]'

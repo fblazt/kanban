@@ -37,7 +37,7 @@ describe('Card detail editing integration', () => {
     const textarea = screen.getByPlaceholderText('Add a more detailed description...')
     await userEvent.type(textarea, 'New description')
 
-    await userEvent.click(screen.getByRole('button', { name: 'High' }))
+    await userEvent.click(screen.getByRole('radio', { name: 'High' }))
     await userEvent.click(screen.getByRole('button', { name: 'Save' }))
 
     const state = useKanbanStore.getState()

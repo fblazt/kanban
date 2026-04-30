@@ -1,5 +1,7 @@
 import type { ReactNode } from 'react'
 
+import { useFocusTrap } from '../../hooks/useFocusTrap'
+
 interface ConfirmDialogProps {
   isOpen: boolean
   title: string
@@ -15,6 +17,8 @@ export function ConfirmDialog({
   onConfirm,
   onCancel,
 }: ConfirmDialogProps): ReactNode {
+  const focusTrapRef = useFocusTrap(isOpen)
+
   if (!isOpen) return null
 
   return (
@@ -24,10 +28,12 @@ export function ConfirmDialog({
       role="presentation"
     >
       <div
+        ref={focusTrapRef}
         className="w-[360px] rounded-lg border border-[var(--color-border-medium)] bg-[var(--color-bg-elevated)] p-6 shadow-lg"
         onClick={(e) => e.stopPropagation()}
         role="alertdialog"
         aria-modal="true"
+        aria-label={title}
       >
         <h3 className="mb-2 text-base font-medium text-[var(--color-text-primary)]">{title}</h3>
         <p className="mb-6 text-sm text-[var(--color-text-secondary)]">{message}</p>

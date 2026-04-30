@@ -47,16 +47,20 @@ export function Column({ columnId }: ColumnProps): ReactNode {
   }
 
   return (
-    <div className="group flex w-[280px] shrink-0 flex-col rounded-md border border-[var(--color-border-subtle)] border-t-2 border-t-[var(--color-border-medium)] bg-[var(--color-bg-elevated)] shadow-sm">
+    <div
+      className="group flex w-[280px] shrink-0 flex-col rounded-md border border-[var(--color-border-subtle)] border-t-2 border-t-[var(--color-border-medium)] bg-[var(--color-bg-elevated)] shadow-sm md:w-[280px]"
+      role="group"
+      aria-label={`${column.title} column`}
+    >
       <ColumnHeader columnId={columnId} />
 
-      <div ref={setNodeRef} className="flex flex-1 flex-col gap-2 overflow-y-auto p-3">
+      <div ref={setNodeRef} className="flex flex-1 flex-col gap-2 overflow-y-auto p-3" role="list" aria-label={`${column.title} cards`}>
         <SortableContext
           items={column.cardIds}
           strategy={verticalListSortingStrategy}
         >
           {columnCards.length === 0 ? (
-            <div className="flex flex-1 items-center justify-center rounded border border-dashed border-[var(--color-border-subtle)] py-8">
+            <div className="flex flex-1 items-center justify-center rounded border border-dashed border-[var(--color-border-subtle)] py-8" role="listitem">
               <span className="text-xs text-[var(--color-text-muted)]">
                 Drop cards here
               </span>
@@ -77,6 +81,7 @@ export function Column({ columnId }: ColumnProps): ReactNode {
               onChange={(e) => setNewCardTitle(e.target.value)}
               onKeyDown={handleKeyDown}
               autoFocus
+              aria-label="New card title"
               className="w-full rounded-md border border-[var(--color-border-medium)] bg-[var(--color-bg-surface)] px-3 py-2 text-sm text-[var(--color-text-primary)] outline-none placeholder:text-[var(--color-text-muted)] focus:border-[var(--color-accent)]"
             />
             <div className="flex gap-2">
@@ -105,7 +110,7 @@ export function Column({ columnId }: ColumnProps): ReactNode {
             onClick={() => setIsAdding(true)}
             className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm text-[var(--color-text-muted)] transition-colors hover:bg-[var(--color-bg-hover)] hover:text-[var(--color-text-secondary)]"
           >
-            <span className="text-base leading-none">+</span>
+            <span className="text-base leading-none" aria-hidden="true">+</span>
             Add a card
           </button>
         )}

@@ -82,7 +82,7 @@ describe('CardModal', () => {
 
     render(<CardModal card={refreshedCard} isOpen={true} onClose={() => {}} />)
 
-    await userEvent.click(screen.getByRole('button', { name: 'High' }))
+    await userEvent.click(screen.getByRole('radio', { name: 'High' }))
     await userEvent.click(screen.getByRole('button', { name: 'Save' }))
 
     expect(useKanbanStore.getState().cards[card.id].priority).toBe('high')
@@ -94,7 +94,7 @@ describe('CardModal', () => {
 
     render(<CardModal card={refreshedCard} isOpen={true} onClose={() => {}} />)
 
-    await userEvent.click(screen.getByRole('button', { name: 'None' }))
+    await userEvent.click(screen.getByRole('radio', { name: 'None' }))
     await userEvent.click(screen.getByRole('button', { name: 'Save' }))
 
     expect(useKanbanStore.getState().cards[card.id].priority).toBeNull()

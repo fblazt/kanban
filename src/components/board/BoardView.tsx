@@ -38,7 +38,7 @@ export function BoardView(): ReactNode {
 
   if (!board) {
     return (
-      <div className="flex flex-1 flex-col items-center justify-center gap-4">
+      <div className="flex flex-1 flex-col items-center justify-center gap-4" role="main">
         <svg
           xmlns="http://www.w3.org/2000/svg"
           width="64"
@@ -50,6 +50,7 @@ export function BoardView(): ReactNode {
           strokeLinecap="round"
           strokeLinejoin="round"
           className="text-[var(--color-text-muted)]"
+          aria-hidden="true"
         >
           <rect width="7" height="9" x="3" y="3" rx="1" />
           <rect width="7" height="5" x="14" y="3" rx="1" />
@@ -97,14 +98,12 @@ export function BoardView(): ReactNode {
     let targetIndex: number
 
     if (overData?.type === 'Card') {
-      // Dropped over another card
       const overCard = useKanbanStore.getState().cards[overId]
       if (!overCard) return
       targetColumnId = overCard.columnId
       const column = useKanbanStore.getState().columns[targetColumnId]
       targetIndex = column.cardIds.indexOf(overId)
     } else if (overData?.type === 'Column') {
-      // Dropped over a column (empty or at end)
       targetColumnId = overId
       const column = useKanbanStore.getState().columns[targetColumnId]
       targetIndex = column.cardIds.length
@@ -115,13 +114,22 @@ export function BoardView(): ReactNode {
     moveCard(activeId, targetColumnId, targetIndex)
   }
 
+  const handleDragCancel = () => {
+    setActiveCardId(null)
+  }
+
   return (
     <DndContext
       sensors={sensors}
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
+      onDragCancel={handleDragCancel}
     >
-      <div className="flex flex-1 gap-4 overflow-x-auto p-5">
+      <div
+        className="flex flex-1 gap-4 overflow-x-auto p-4 md:p-5"
+        role="region"
+        aria-label="Kanban board"
+      >
         {boardColumns.map((column) => (
           <Column key={column.id} columnId={column.id} />
         ))}
@@ -129,7 +137,11 @@ export function BoardView(): ReactNode {
       </div>
       <DragOverlay dropAnimation={null}>
         {activeCardId ? (
-          <div className="rounded-md border border-[var(--color-border-medium)] bg-[var(--color-bg-elevated)] p-3 shadow-lg opacity-90">
+          <div
+            className="rounded-md border border-[var(--color-border-medium)] bg-[var(--color-bg-elevated)] p-3 shadow-lg opacity-90"
+            role="article"
+            aria-label={useKanbanStore.getState().cards[activeCardId]?.title}
+          >
             <p className="text-sm font-medium text-[var(--color-text-primary)]">
               {useKanbanStore.getState().cards[activeCardId]?.title}
             </p>
